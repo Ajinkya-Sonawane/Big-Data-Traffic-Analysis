@@ -2,7 +2,6 @@ from typing import Optional
 from fastapi import FastAPI
 from pymongo import MongoClient
 import os
-import json
 
 MONGO_URI = os.environ['MONGO_URI']
 DB_NAME = os.environ['DB_NAME']
@@ -17,7 +16,7 @@ def root():
     response = {}
     response["status"] = 200
     response["data"] = "This is Big Data CS GY 6513 Proejct API Endpoint"
-    return json.dumps(response)
+    return response
 
 @app.get("/chicago/crash")
 def fetch_chicago_crash(query = "summary", type=None,month=None,year=None):
@@ -44,6 +43,6 @@ def fetch_chicago_crash(query = "summary", type=None,month=None,year=None):
     except Exception as ex:
         response["status"] = 400
         response["data"] = str(e)
-    return json.dumps(response)
+    return response
 
 
