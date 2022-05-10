@@ -28,13 +28,12 @@ def root():
     return response
 
 @app.get("/chicago/crash")
-def fetch_chicago_crash(query = "summary", type=None,month=None,year=None):
+def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
     response = {}
     try:
         search = {}
         if query.lower() == "summary":
             collection = db['chicago_crash_summary']
-            response["data"] = [document for document in collection.find({},{"_id":0})]
         elif query.lower() == "count":
             collection = db['chicago_monthly_crash_count']            
         elif query.lower() == "cause":
@@ -43,6 +42,10 @@ def fetch_chicago_crash(query = "summary", type=None,month=None,year=None):
             collection = db['chicago_total_damage']            
         elif query.lower() == "weather":
             collection = db['chicago_weather_conditions_during_accident']
+        elif query.lower() == "violation" and category.lower() == "light":
+            collection = db['chicago_red_light_violations_summary']
+        elif query.lower() == "violation" and category.lower() == "speed":
+            collection = db['chicago_speed_violations_summary']
         if month:
             search["month"] = month
         if year:
@@ -51,7 +54,33 @@ def fetch_chicago_crash(query = "summary", type=None,month=None,year=None):
         response["status"] = 200
     except Exception as ex:
         response["status"] = 400
-        response["data"] = str(e)
+        response["data"] = str(ex)
     return response
 
 
+@app.get("/nyc/crash")
+def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
+    response = {}
+    try:
+        search = {}
+        collection = None
+        if query.lower() == "summary":
+            collection = db['newyork_crash_summary']
+        elif query.lower() == "count":
+            collection = db['newyork_monthly_crash_count']            
+        elif query.lower() == "cause":
+            collection = db['newyork_prime_contributory_cause']
+        if month:
+            search["month"] = month
+        if year:
+            search["year"] = year
+        if collection is not None:
+            response["data"] = [document for document in collection.find(search,{"_id":0})]
+            response["status"] = 200
+        else:
+            response["status"] = 400
+            response["data"] = "Invalid data source"
+    except Exception as ex:
+        response["status"] = 400
+        response["data"] = str(ex)
+    return response
