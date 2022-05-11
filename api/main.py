@@ -202,6 +202,45 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
     return response
 
 
+@app.get("/violation")
+def fetch_chicago_crash(category = "light",year=None):
+    response = {}    
+    try:
+        search = {}
+        zones = {}
+        collection = None
+        if category.lower() == "light":
+            collection = db['chicago_red_light_violations_summary']
+        elif category.lower() == "speed":
+            collection = db['chicago_speed_violations_summary']
+        if year:
+            search["year"] = year
+        else:
+            raise Exception("Invalid year")
+        if collection  is not None:
+            data = [document for document in collection.find(search,{"_id":0})]
+            temp = []
+            zones = handle_zones(collection)
+            for document in data:
+                if document.get("month",0):
+                    document["month"] = calendar.month_name[int(document["month"])][:3]
+                if document.get("latBin",0) and document.get("longBin",0):
+                    document["zone"] = "Zone " + zones[document["latBin"]+":"+document["longBin"]]
+                    document.pop("latBin")
+                    document.pop("longBin")                        
+                temp.append(document)
+            temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon, int(k['zone'][5:])))
+            response["data"] = temp
+            response["status"] = 200
+        else:
+            raise Exception("Invalid Data Source")
+    except Exception as ex:
+        response["status"] = 400
+        response["data"] = str(ex)
+    return response
+
+
+
 @app.get("/dropdown")
 def fetch_dropdown(dataset = "chicago"):
     response = {}
