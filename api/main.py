@@ -63,14 +63,32 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
                     "$group" : 
                         {"_id" : "$PRIM_CONTRIBUTORY_CAUSE", 
                         "count" : {"$sum" : "$prim_contributory_cause_count"}
-                        }}
+                        }
+                    },
+                    { "$sort" : { 'count': -1 } },
+                    { "$limit" : 12 }
+                    ])
+                response["data"] = [document for document in data]
+            elif query.lower() == "weather":
+                data = collection.aggregate(
+                    [
+                    { "$match": { "year": year} },
+                    {
+                    "$group" : 
+                        {"_id" : "$WEATHER_CONDITION", 
+                        "count" : {"$sum" : "$weather_condition_accident_count"}
+                        }
+                    },
+                    { "$sort" : { 'count': -1 } },
+                    { "$limit" : 12 }
                     ])
                 response["data"] = [document for document in data]
             else:
                 data = [document for document in collection.find(search,{"_id":0})]
                 temp = []
                 for document in data:
-                    document["month"] = calendar.month_name[int(document["month"])][:3]
+                    if document.get("month",0):
+                        document["month"] = calendar.month_name[int(document["month"])][:3]
                     temp.append(document)
                 response["data"] = temp
             response["status"] = 200
@@ -100,8 +118,6 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
             search["month"] = month
         if year:
             search["year"] = year
-        if year:
-            search["year"] = year
         else:
             raise Exception("Invalid year")        
         if collection is not None:
@@ -113,13 +129,31 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
                 "$group" : 
                     {"_id" : "$contributing_factor_vehicle_1", 
                     "count" : {"$sum" : "$prim_contributory_cause_count"}
-                    }}
+                    }
+                },
+                { "$sort" : { 'count': -1 } },
+                { "$limit" : 12 }
                 ])]
+            elif query.lower() == "weather":
+                data = collection.aggregate(
+                    [
+                    { "$match": { "year": year} },
+                    {
+                    "$group" : 
+                        {"_id" : "$WEATHER_CONDITION", 
+                        "count" : {"$sum" : "$weather_condition_accident_count"}
+                        }
+                    },
+                    { "$sort" : { 'count': -1 } },
+                    { "$limit" : 12 }
+                    ])
+                response["data"] = [document for document in data]                
             else:
                 data = [document for document in collection.find(search,{"_id":0})]
                 temp = []
                 for document in data:
-                    document["month"] = calendar.month_name[int(document["month"])][:3]
+                    if document.get("month",0):
+                        document["month"] = calendar.month_name[int(document["month"])][:3]
                     temp.append(document)
                 response["data"] = temp
             response["status"] = 200
