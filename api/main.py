@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import calendar
 
 MONGO_URI = os.environ['MONGO_URI']
 DB_NAME = os.environ['DB_NAME']
@@ -29,9 +30,10 @@ def root():
 
 @app.get("/chicago/crash")
 def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
-    response = {}
+    response = {}    
     try:
         search = {}
+        collection = None
         if query.lower() == "summary":
             collection = db['chicago_crash_summary']
         elif query.lower() == "count":
@@ -52,19 +54,28 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
             search["year"] = year
         else:
             raise Exception("Invalid year")
-        if query.lower() == "cause":
-            response["data"] = [document for document in collection.aggregate(
-            [
-            { "$match": { "year": year} },
-            {
-            "$group" : 
-                {"_id" : "$PRIM_CONTRIBUTORY_CAUSE", 
-                "count" : {"$sum" : "$prim_contributory_cause_count"}
-                }}
-            ])]
+        if collection  is not None:
+            if query.lower() == "cause":
+                data = collection.aggregate(
+                    [
+                    { "$match": { "year": year} },
+                    {
+                    "$group" : 
+                        {"_id" : "$PRIM_CONTRIBUTORY_CAUSE", 
+                        "count" : {"$sum" : "$prim_contributory_cause_count"}
+                        }}
+                    ])
+                response["data"] = [document for document in data]
+            else:
+                data = [document for document in collection.find(search,{"_id":0})]
+                temp = []
+                for document in data:
+                    document["month"] = calendar.month_name[int(document["month"])][:3]
+                    temp.append(document)
+                response["data"] = temp
+            response["status"] = 200
         else:
-            response["data"] = [document for document in collection.find(search,{"_id":0})]
-        response["status"] = 200
+            raise Exception("Invalid Data Source")
     except Exception as ex:
         response["status"] = 400
         response["data"] = str(ex)
@@ -105,8 +116,13 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
                     }}
                 ])]
             else:
-                response["data"] = [document for document in collection.find(search,{"_id":0})]
-                response["status"] = 200
+                data = [document for document in collection.find(search,{"_id":0})]
+                temp = []
+                for document in data:
+                    document["month"] = calendar.month_name[int(document["month"])][:3]
+                    temp.append(document)
+                response["data"] = temp
+            response["status"] = 200
         else:
             raise Exception("Invalid Data Source")
     except Exception as ex:
