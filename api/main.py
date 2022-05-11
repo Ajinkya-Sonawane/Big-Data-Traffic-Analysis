@@ -59,7 +59,7 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
 
 
 @app.get("/nyc/crash")
-def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
+def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
     response = {}
     try:
         search = {}
@@ -70,12 +70,42 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
             collection = db['newyork_monthly_crash_count']            
         elif query.lower() == "cause":
             collection = db['newyork_prime_contributory_cause']
+        elif query.lower() == "vehicle":
+            collection = db['newyork_vehicle_type_crash_cause']
         if month:
             search["month"] = month
         if year:
             search["year"] = year
         if collection is not None:
             response["data"] = [document for document in collection.find(search,{"_id":0})]
+            response["status"] = 200
+        else:
+            response["status"] = 400
+            response["data"] = "Invalid data source"
+    except Exception as ex:
+        response["status"] = 400
+        response["data"] = str(ex)
+    return response
+
+
+@app.get("/dropdown")
+def fetch_dropdown(dataset = "chicago"):
+    response = {}
+    try:
+        search = {}
+        collection = None
+        years = set()
+        if dataset.lower() == "chicago" or dataset.lower() == "violation":
+            collection = db['chicago_crash_summary']
+            for year in collection.distinct("year"):
+                years.add(year)
+        elif dataset.lower() == "newyork":
+            collection = db['newyork_crash_summary']
+            for year in collection.distinct("year"):
+                years.add(year) 
+        if collection is not None:
+            print(years)
+            response["data"] =  list(sorted(years))
             response["status"] = 200
         else:
             response["status"] = 400
