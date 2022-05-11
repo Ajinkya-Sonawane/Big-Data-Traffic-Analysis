@@ -112,7 +112,9 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
                         document.pop("latBin")
                         document.pop("longBin")                        
                     temp.append(document)
-                if query.lower() == "summary":
+                if not temp:
+                    response["data"] = []
+                elif query.lower() == "summary":
                     temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon, int(k['zone'][5:])))
                 elif temp[0].get("month",0):
                     temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon))
@@ -188,7 +190,9 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
                         document.pop("latBin")
                         document.pop("longBin")   
                     temp.append(document)
-                if query.lower() == "summary":
+                if not temp:
+                    response["data"] = []
+                elif query.lower() == "summary":
                     temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon, int(k['zone'][5:])))
                 elif temp[0].get("month",0):
                     temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon))
