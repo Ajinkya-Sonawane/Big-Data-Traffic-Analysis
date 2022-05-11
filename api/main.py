@@ -36,8 +36,6 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
             collection = db['chicago_crash_summary']
         elif query.lower() == "count":
             collection = db['chicago_monthly_crash_count']            
-        elif query.lower() == "cause":
-            collection = db['chicago_prime_contributory_cause']            
         elif query.lower() == "damage":
             collection = db['chicago_total_damage']            
         elif query.lower() == "weather":
@@ -46,11 +44,26 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
             collection = db['chicago_red_light_violations_summary']
         elif query.lower() == "violation" and category.lower() == "speed":
             collection = db['chicago_speed_violations_summary']
+        elif query.lower() == "cause":
+            collection = db['chicago_prime_contributory_cause']
         if month:
             search["month"] = month
         if year:
             search["year"] = year
-        response["data"] = [document for document in collection.find(search,{"_id":0})]
+        else:
+            raise Exception("Invalid year")
+        if query.lower() == "cause":
+            response["data"] = [document for document in collection.aggregate(
+            [
+            { "$match": { "year": year} },
+            {
+            "$group" : 
+                {"_id" : "$PRIM_CONTRIBUTORY_CAUSE", 
+                "count" : {"$sum" : "$prim_contributory_cause_count"}
+                }}
+            ])]
+        else:
+            response["data"] = [document for document in collection.find(search,{"_id":0})]
         response["status"] = 200
     except Exception as ex:
         response["status"] = 400
@@ -76,12 +89,26 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
             search["month"] = month
         if year:
             search["year"] = year
-        if collection is not None:
-            response["data"] = [document for document in collection.find(search,{"_id":0})]
-            response["status"] = 200
+        if year:
+            search["year"] = year
         else:
-            response["status"] = 400
-            response["data"] = "Invalid data source"
+            raise Exception("Invalid year")        
+        if collection is not None:
+            if query.lower() == "cause":
+                response["data"] = [document for document in collection.aggregate(
+                [
+                { "$match": { "year": year} },
+                {
+                "$group" : 
+                    {"_id" : "$contributing_factor_vehicle_1", 
+                    "count" : {"$sum" : "$prim_contributory_cause_count"}
+                    }}
+                ])]
+            else:
+                response["data"] = [document for document in collection.find(search,{"_id":0})]
+                response["status"] = 200
+        else:
+            raise Exception("Invalid Data Source")
     except Exception as ex:
         response["status"] = 400
         response["data"] = str(ex)
