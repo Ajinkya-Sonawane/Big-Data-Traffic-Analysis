@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import calendar
+from time import strptime
 
 MONGO_URI = os.environ['MONGO_URI']
 DB_NAME = os.environ['DB_NAME']
@@ -111,6 +112,10 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
                         document.pop("latBin")
                         document.pop("longBin")                        
                     temp.append(document)
+                if query.lower() == "summary":
+                    temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon, int(k['zone'][5:])))
+                elif temp[0].get("month",0):
+                    temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon))
                 response["data"] = temp
             response["status"] = 200
         else:
@@ -183,6 +188,10 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
                         document.pop("latBin")
                         document.pop("longBin")   
                     temp.append(document)
+                if query.lower() == "summary":
+                    temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon, int(k['zone'][5:])))
+                elif temp[0].get("month",0):
+                    temp = sorted(temp, key=lambda k: (strptime(k['month'],'%b').tm_mon))
                 response["data"] = temp
             response["status"] = 200
         else:
