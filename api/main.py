@@ -21,6 +21,20 @@ app.add_middleware(
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 
+
+def handle_zones(collection):
+    bins = collection.aggregate([
+            { "$project": { "zone": { "$concat": [ "$latBin", ":", "$longBin" ] } } }
+        ])
+    zones = {}
+    count = 1
+    for document in bins:
+        if document["zone"] not in zones:
+            zones[document["zone"]] = str(count)
+            count += 1
+    return zones
+
+
 @app.get("/")
 def root():
     response = {}
@@ -33,6 +47,7 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
     response = {}    
     try:
         search = {}
+        zones = {}
         collection = None
         if query.lower() == "summary":
             collection = db['chicago_crash_summary']
@@ -86,9 +101,15 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
             else:
                 data = [document for document in collection.find(search,{"_id":0})]
                 temp = []
+                if query.lower() == "summary":
+                    zones = handle_zones(collection)
                 for document in data:
                     if document.get("month",0):
                         document["month"] = calendar.month_name[int(document["month"])][:3]
+                    if document.get("latBin",0) and document.get("longBin",0):
+                        document["zone"] = "Zone " + zones[document["latBin"]+":"+document["longBin"]]
+                        document.pop("latBin")
+                        document.pop("longBin")                        
                     temp.append(document)
                 response["data"] = temp
             response["status"] = 200
@@ -105,6 +126,7 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
     response = {}
     try:
         search = {}
+        zones = {}
         collection = None
         if query.lower() == "summary":
             collection = db['newyork_crash_summary']
@@ -151,9 +173,15 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
             else:
                 data = [document for document in collection.find(search,{"_id":0})]
                 temp = []
+                if query.lower() == "summary":
+                    zones = handle_zones(collection)
                 for document in data:
                     if document.get("month",0):
                         document["month"] = calendar.month_name[int(document["month"])][:3]
+                    if document.get("latBin",0) and document.get("longBin",0):
+                        document["zone"] = "Zone " + zones[document["latBin"]+":"+document["longBin"]]
+                        document.pop("latBin")
+                        document.pop("longBin")   
                     temp.append(document)
                 response["data"] = temp
             response["status"] = 200
