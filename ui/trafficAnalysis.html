@@ -22,9 +22,9 @@
                     <li class="nav-item dropdown">
                         <a id="dropdownVal" href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Select Dataset</a>
                         <div class="dropdown-menu">
-                            <a href="#" onClick="populateYearDropdown('chicago', 'Chicago');" class="dropdown-item">Chicago</a>
-                            <a href="#" onClick="populateYearDropdown('newyork', 'NewYork');" class="dropdown-item">New York</a>
-                            <a href="#" onClick="populateYearDropdown('chicago', 'Violations');" class="dropdown-item">Violations</a>
+                            <a href="#" onClick="populateYearDropdown('chicago', 'Chicago');" class="dropdown-item">Chicago Crash Data</a>
+                            <a href="#" onClick="populateYearDropdown('newyork', 'NewYork');" class="dropdown-item">NYC Crash Data</a>
+                            <a href="#" onClick="populateYearDropdown('chicago', 'Violations');" class="dropdown-item">Traffic Violations</a>
                         </div>
                     </li>
                 </ul>
@@ -101,13 +101,13 @@
                     document.getElementById('yearDropdown').innerHTML = "";
                     if (dataset == 'chicago') {
                         if(name == 'Chicago') {
-                            document.getElementById('dropdownVal').innerHTML = "Chicago";
+                            document.getElementById('dropdownVal').innerHTML = "Chicago Crash Data";
                             $.each(yearData, function(index, value) {
                                 //event_data += '<a href="#" onClick="populateChicagoData(' + value + ',' + name + ');" class="dropdown-item">' + value + '</a>';
                                 event_data += `<a href="#" onClick="populateChicagoData(${value},'${name}');" class="dropdown-item"> ${value} </a>`;
                             });
                         } else {
-                            document.getElementById('dropdownVal').innerHTML = "Violations";
+                            document.getElementById('dropdownVal').innerHTML = "Traffic Violations";
                             $.each(yearData, function(index, value) {
                                 event_data += `<a href="#" onClick="populateChicagoData(${value},'${name}');" class="dropdown-item"> ${value} </a>`;
                             });
@@ -115,7 +115,7 @@
                         
                     } else if (dataset == 'newyork') {
                         $.each(yearData, function(index, value) {
-                            document.getElementById('dropdownVal').innerHTML = "New York";
+                            document.getElementById('dropdownVal').innerHTML = "NYC Crash Data";
                             event_data += '<a href="#" onClick="populateNewYorkData(' + value + ');" class="dropdown-item">' + value + '</a>';
                         });
                     }
@@ -143,9 +143,9 @@
             if (name == 'Chicago') {
                 updateSummaryTable("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=summary&year=" + yearval, "Chicago");
                 updateBarGraph("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=count&year=" + yearval, "Chicago");
-                updatePieChart1("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=cause&year=" + yearval, "Chicago");
-                updatePieChart2("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=damage&year=" + yearval, "Chicago");
-                updatePieChart3("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=weather&year=" + yearval, "Chicago");
+                updatePieChart1("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=cause&year=" + yearval, "Chicago", "Cause of crash");
+                updatePieChart2("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=damage&year=" + yearval, "Chicago", "Total damage amount($)");
+                updatePieChart3("https://big-data-traffic-analysis.herokuapp.com/chicago/crash?query=weather&year=" + yearval, "Chicago", "Weather during crash");
             } else if (name == 'Violations') {
                 $('#pieChart3').remove();
                 url1 = 'https://big-data-traffic-analysis.herokuapp.com/violation?category=speed&year=' + yearval;
@@ -159,8 +159,8 @@
             $('#pieChart3').remove();
             updateSummaryTable("https://big-data-traffic-analysis.herokuapp.com/nyc/crash?query=summary&year=" + yearval, "NewYork");
             updateBarGraph("https://big-data-traffic-analysis.herokuapp.com/nyc/crash?query=count&year=" + yearval, "NewYork");
-            updatePieChart1("https://big-data-traffic-analysis.herokuapp.com/nyc/crash?query=cause&year=" + yearval, "NewYork");
-            updatePieChart2("https://big-data-traffic-analysis.herokuapp.com/nyc/crash?query=vehicle&year=" + yearval, "NewYork");
+            updatePieChart1("https://big-data-traffic-analysis.herokuapp.com/nyc/crash?query=cause&year=" + yearval, "NewYork", "Cause of crash");
+            updatePieChart2("https://big-data-traffic-analysis.herokuapp.com/nyc/crash?query=vehicle&year=" + yearval, "NewYork", "Vehicle type");
         }
 
         function updateSummaryTable(url, dataset) {
@@ -306,7 +306,7 @@
 			});
         }
 
-        function updatePieChart1(url, dataset) {
+        function updatePieChart1(url, dataset, title) {
             $('#pieChart1').remove();
             $('#pieChart1Div').append('<canvas id="pieChart1" style="width:100%;max-width:400px"><canvas>');
             //Pie Chart 1 Code
@@ -341,7 +341,7 @@
                             options: {
                                 title: {
                                 display: true,
-                                text: "World Wide Wine Production 2018"
+                                text: title
                                 },
                                 legend: {
                                     display: false
@@ -357,7 +357,7 @@
 			});
         }
 
-        function updatePieChart2(url, dataset) {
+        function updatePieChart2(url, dataset, title) {
             $('#pieChart2').remove();
             $('#pieChart2Div').append('<canvas id="pieChart2" style="width:100%;max-width:400px"><canvas>');
             //Pie Chart 2 Code
@@ -400,7 +400,7 @@
                             options: {
                                 title: {
                                 display: true,
-                                text: "Total Damage Amount"
+                                text: title
                                 },
                                 legend: {
                                     display: false
@@ -416,7 +416,7 @@
 			});
         }
 
-        function updatePieChart3(url, dataset) {
+        function updatePieChart3(url, dataset, title) {
             $('#pieChart3').remove();
             $('#pieChart3Div').append('<canvas id="pieChart3" style="width:100%;max-width:400px"><canvas>');
             //Pie Chart 2 Code
@@ -451,7 +451,7 @@
                             options: {
                                 title: {
                                 display: true,
-                                text: "Total Damage Amount"
+                                text: title
                                 },
                                 legend: {
                                     display: false
