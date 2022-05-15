@@ -11,6 +11,8 @@ DB_NAME = os.environ['DB_NAME']
 
 app = FastAPI()
 
+
+# Handle CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,6 +36,23 @@ def handle_zones(collection):
             zones[document["zone"]] = str(count)
             count += 1
     return zones
+
+
+def aggregate_data(collection,year,field1,field2,limit):
+    data = collection.aggregate(
+    [
+        { "$match": { "year": year} },
+        {
+        "$group" : 
+            {"_id" : "$"+field1, 
+            "count" : {"$sum" : "$"+field2}
+            }
+        },
+        { "$sort" : { 'count': -1 } },
+        { "$limit" : limit }
+    ])
+    return [document for document in data]
+
 
 
 @app.get("/")
@@ -72,33 +91,9 @@ def fetch_chicago_crash(query = "summary", category=None,month=None,year=None):
             raise Exception("Invalid year")
         if collection  is not None:
             if query.lower() == "cause":
-                data = collection.aggregate(
-                    [
-                    { "$match": { "year": year} },
-                    {
-                    "$group" : 
-                        {"_id" : "$PRIM_CONTRIBUTORY_CAUSE", 
-                        "count" : {"$sum" : "$prim_contributory_cause_count"}
-                        }
-                    },
-                    { "$sort" : { 'count': -1 } },
-                    { "$limit" : 12 }
-                    ])
-                response["data"] = [document for document in data]
+                response["data"] = aggregate_data(collection,year,"PRIM_CONTRIBUTORY_CAUSE","prim_contributory_cause_count",12)
             elif query.lower() == "weather":
-                data = collection.aggregate(
-                    [
-                    { "$match": { "year": year} },
-                    {
-                    "$group" : 
-                        {"_id" : "$WEATHER_CONDITION", 
-                        "count" : {"$sum" : "$weather_condition_accident_count"}
-                        }
-                    },
-                    { "$sort" : { 'count': -1 } },
-                    { "$limit" : 12 }
-                    ])
-                response["data"] = [document for document in data]
+                response["data"] = aggregate_data(collection,year,"WEATHER_CONDITION","weather_condition_accident_count",12)
             else:
                 data = [document for document in collection.find(search,{"_id":0})]
                 temp = []
@@ -151,32 +146,9 @@ def fetch_nyc_crash(query = "summary", category=None,month=None,year=None):
             raise Exception("Invalid year")        
         if collection is not None:
             if query.lower() == "cause":
-                response["data"] = [document for document in collection.aggregate(
-                [
-                { "$match": { "year": year} },
-                {
-                "$group" : 
-                    {"_id" : "$contributing_factor_vehicle_1", 
-                    "count" : {"$sum" : "$prim_contributory_cause_count"}
-                    }
-                },
-                { "$sort" : { 'count': -1 } },
-                { "$limit" : 12 }
-                ])]
+                response["data"] = aggregate_data(collection,year,"contributing_factor_vehicle_1","prim_contributory_cause_count",12)
             elif query.lower() == "weather":
-                data = collection.aggregate(
-                    [
-                    { "$match": { "year": year} },
-                    {
-                    "$group" : 
-                        {"_id" : "$WEATHER_CONDITION", 
-                        "count" : {"$sum" : "$weather_condition_accident_count"}
-                        }
-                    },
-                    { "$sort" : { 'count': -1 } },
-                    { "$limit" : 12 }
-                    ])
-                response["data"] = [document for document in data]                
+                response["data"] = aggregate_data(collection,year,"WEATHER_CONDITION","weather_condition_accident_count",12)
             else:
                 data = [document for document in collection.find(search,{"_id":0})]
                 temp = []
